@@ -12,7 +12,9 @@ class Player:
     MAX_FALL = 900.0
     COYOTE_TIME = 0.1
     JUMP_BUFFER_TIME = 0.12
-    RUN_FRAME_TIME = 0.12
+    FLOAT_FRAME_TIME = 0.2
+    HOVER = 10
+    _ANIM_SEQ = (FRAME_RUN_A, FRAME_IDLE, FRAME_RUN_B, FRAME_IDLE)
 
     def __init__(self, x, y):
         self.rect = pygame.Rect(0, 0, self.WIDTH, self.HEIGHT)
@@ -24,6 +26,9 @@ class Player:
         ]
         self.frame = FRAME_IDLE
         self._anim_timer = 0.0
+        self._anim_idx = 0
+        self._shadow = pygame.Surface((self.WIDTH + 8, 12), pygame.SRCALPHA)
+        pygame.draw.ellipse(self._shadow, (0, 0, 0, 80), self._shadow.get_rect())
         self.facing = 1
         self.vx = 0.0
         self.vy = 0.0
@@ -32,10 +37,11 @@ class Player:
         self._jump_buffer = 0.0
 
     def draw(self, screen, pos):
+        screen.blit(self._shadow, (pos[0] - 4, pos[1] + self.HEIGHT - 5))
         surf = self.frames[self.frame]
         if self.facing < 0:
             surf = pygame.transform.flip(surf, True, False)
-        screen.blit(surf, pos)
+        screen.blit(surf, (pos[0], pos[1] - self.HOVER))
 
     def move(self, left, right):
         self.vx = 0.0
@@ -99,11 +105,8 @@ class Player:
         self._update_animation(dt)
 
     def _update_animation(self, dt):
-        if self.vx != 0.0 and self.on_ground:
-            self._anim_timer += dt
-            if self._anim_timer >= self.RUN_FRAME_TIME:
-                self._anim_timer = 0.0
-                self.frame = FRAME_RUN_B if self.frame == FRAME_RUN_A else FRAME_RUN_A
-        else:
-            self.frame = FRAME_IDLE
-            self._anim_timer = 0.0
+        self._anim_timer += dt
+        while self._anim_timer >= self.FLOAT_FRAME_TIME:
+            self._anim_timer -= self.FLOAT_FRAME_TIME
+            self._anim_idx = (self._anim_idx + 1) % len(self._ANIM_SEQ)
+            self.frame = self._ANIM_SEQ[self._anim_idx]

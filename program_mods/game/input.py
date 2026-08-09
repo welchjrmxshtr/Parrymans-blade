@@ -9,9 +9,7 @@ def handle_events(events, player):
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                running = False
-            elif event.key in JUMP_KEYS:
+            if event.key in JUMP_KEYS:
                 player.jump_pressed()
         elif event.type == pygame.KEYUP:
             if event.key in JUMP_KEYS:
