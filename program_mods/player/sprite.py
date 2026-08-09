@@ -1,30 +1,8 @@
 import pygame
 
-_PLAYER_PIXELS = [
-    "..HHHHHHHHHHHHH..",
-    "..HHHHHHHHHHHHH..",
-    ".HHHHHHHHHHHHHHH.",
-    ".HHSSSSSSSSSSSHH.",
-    ".HHSSSSSSSSSSSHH.",
-    ".HSSSSSSSSSSSSSH.",
-    ".HSSSSSSSSSSSSSH.",
-    ".HSSSSSSSSSSSSSH.",
-    ".HSSEESSSSEESSSH.",
-    ".HSSSSSMMSSSSSSH.",
-    ".HHHSSSSSSSSSHHH.",
-    ".TTTTTTTTTTTTTTT.",
-    "TTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTT",
-    ".TTTTTTTTTTTTTTT.",
-    "..TTTTTTTTTTTTT..",
-    ".PPPPPPPPPPPPPPP.",
-    "..PP.........PP..",
-    "..PP.........PP..",
-    "..PP.........PP..",
-    "..PP.........PP..",
-    "..KK.........KK..",
-    ".KKK.........KKK.",
-]
+FRAME_IDLE = 0
+FRAME_RUN_A = 1
+FRAME_RUN_B = 2
 
 _PALETTE = {
     "H": (74, 47, 27),
@@ -36,12 +14,67 @@ _PALETTE = {
     "K": (43, 43, 43),
 }
 
+_HEAD = [
+    "....HHHHHHHHHHHHH....",
+    "....HHHHHHHHHHHHH....",
+    "...HHHHHHHHHHHHHHH...",
+    "...HHSSSSSSSSSSSHH...",
+    "...HHSSSSSSSSSSSHH...",
+    "...HSSSSSSSSSSSSSH...",
+    "...HSSSSSSSSSSSSSH...",
+    "...HSSSSSSSSSSSSSH...",
+    "...HSSEESSSSEESSSH...",
+    "...HSSSSSMMSSSSSSH...",
+    "...HHHSSSSSSSSSHHH...",
+]
 
-def build_sprite(scale=2):
-    h = len(_PLAYER_PIXELS)
-    w = len(_PLAYER_PIXELS[0])
+_LEGS = [
+    "....PP.........PP....",
+    "....PP.........PP....",
+    "....PP.........PP....",
+    "....PP.........PP....",
+    "....KK.........KK....",
+    "...KKK.........KKK...",
+]
+
+_TORSO = {
+    FRAME_IDLE: [
+        "....TTTTTTTTTTTTT....",
+        ".TT.TTTTTTTTTTTTT.TT.",
+        ".TT.TTTTTTTTTTTTT.TT.",
+        ".TT.TTTTTTTTTTTTT.TT.",
+        ".TT.TTTTTTTTTTTTT.TT.",
+        ".SS.PPPPPPPPPPPPP.SS.",
+    ],
+    FRAME_RUN_A: [
+        "....TTTTTTTTTTTTT....",
+        ".TT.TTTTTTTTTTTTT.TT.",
+        ".TT.TTTTTTTTTTTTT.TT.",
+        ".SS.TTTTTTTTTTTTT.TT.",
+        "....TTTTTTTTTTTTT.TT.",
+        "....PPPPPPPPPPPPP.SS.",
+    ],
+    FRAME_RUN_B: [
+        "....TTTTTTTTTTTTT....",
+        ".TT.TTTTTTTTTTTTT.TT.",
+        ".TT.TTTTTTTTTTTTT.TT.",
+        ".TT.TTTTTTTTTTTTT.SS.",
+        ".TT.TTTTTTTTTTTTT....",
+        ".SS.PPPPPPPPPPPPP....",
+    ],
+}
+
+_PIXEL_FRAMES = {
+    frame: _HEAD + torso + _LEGS for frame, torso in _TORSO.items()
+}
+
+
+def build_sprite(frame=FRAME_IDLE, scale=2):
+    pixels = _PIXEL_FRAMES[frame]
+    h = len(pixels)
+    w = len(pixels[0])
     surf = pygame.Surface((w * scale, h * scale), pygame.SRCALPHA)
-    for row, line in enumerate(_PLAYER_PIXELS):
+    for row, line in enumerate(pixels):
         for col, ch in enumerate(line):
             color = _PALETTE.get(ch)
             if color is None:

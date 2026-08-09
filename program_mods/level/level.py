@@ -5,6 +5,8 @@ LEVEL_HEIGHT = 800
 
 PLAYER_SPAWN = (150, 500)
 
+CHECKPOINT_POS = (2310, 660)
+
 PLATFORMS = [
     pygame.Rect(0, 700, 2400, 100),
     pygame.Rect(260, 640, 160, 26),
