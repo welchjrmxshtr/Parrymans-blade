@@ -8,8 +8,10 @@ from .. import level
 from ..player import Player
 from ..camera import Camera
 from ..checkpoint import Checkpoint
+from ..hud import draw_hud
 from ..worlds import WORLDS
 from ..platform import build_deck
+from ..backdrop import build_decor
 from ..victory import run_victory_scene
 
 
@@ -40,9 +42,12 @@ def _run_game(screen, clock, font):
     level_index = 0
     respawn_at_checkpoint = False
     entering = False
+    hud_font = make_font(20)
 
     while True:
         decks = {plat.size: build_deck(*plat.size) for plat in level.PLATFORMS}
+        decor_surf = build_decor(level.LEVEL_WIDTH, level.LEVEL_HEIGHT, level.PLATFORMS, level.DECOR)
+        solid_furniture = set(level.DECOR.get("furniture", {})) if level.DECOR else set()
         player = Player(*level.PLAYER_SPAWN)
         camera = Camera(WIDTH, HEIGHT, level.LEVEL_WIDTH, level.LEVEL_HEIGHT)
         checkpoint = Checkpoint(*level.CHECKPOINT_POS)
@@ -102,9 +107,14 @@ def _run_game(screen, clock, font):
 
             screen.fill(BG_COLOR)
             for plat in level.PLATFORMS:
+                if plat.height > 30 and (plat.left, plat.top, plat.width, plat.height) in solid_furniture:
+                    continue
                 screen.blit(decks[plat.size], camera.apply(plat))
+            if decor_surf is not None:
+                screen.blit(decor_surf, camera.apply(decor_surf.get_rect()))
             checkpoint.draw(screen, camera.apply(checkpoint.rect))
             player.draw(screen, camera.apply(player.rect))
+            draw_hud(screen, hud_font, level)
             if message_timer > 0.0:
                 text = font.render("Checkpoint reached!", MESSAGE_COLOR)
                 screen.blit(text, text.get_rect(center=(WIDTH // 2, 40)))

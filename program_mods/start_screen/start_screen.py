@@ -69,6 +69,7 @@ def run_start_screen(screen):
 
         surf = frames[anim]
         rect = surf.get_rect(center=(WIDTH // 2, 300))
+        rect.top -= getattr(surf, "body_top", 0)
         screen.blit(shadow, (rect.centerx - shadow.get_width() // 2, rect.bottom + 6))
         screen.blit(surf, rect)
 

@@ -1,19 +1,33 @@
 import pygame
 
-# 2-5 "Cerberus": 6660px, first world boss arena. Checkpoint is placed far from
-# the right edge (x=1500) so a loop-back respawn is NOT instantly at the edge --
-# this keeps the re-completion loop bug from triggering. Completion still means
-# reaching the right edge until boss-defeat logic is implemented.
+# 2-5 "Cerberus": 6660px, first world boss arena. A single long open floor (no
+# pits -- boss fights stay on flat ground) with walk-under dodge ledges every
+# ~400-800px and two climbable 2-step towers. The checkpoint sits at x=1500,
+# far from the right edge (5160px runway) so the post-last-world respawn cannot
+# instantly re-trigger completion. Completion still means reaching the right
+# edge until boss-defeat logic is implemented.
 
 PLATFORMS = [
+    # long open arena floor
     pygame.Rect(0, 700, 6660, 100),
-    pygame.Rect(800, 620, 200, 26),
-    pygame.Rect(1500, 560, 200, 26),
-    pygame.Rect(2400, 620, 200, 26),
-    pygame.Rect(3300, 560, 200, 26),
-    pygame.Rect(4200, 620, 200, 26),
-    pygame.Rect(5100, 560, 200, 26),
-    pygame.Rect(5900, 640, 200, 26),
+    # dodge ledges (walk under, hop on for height)
+    pygame.Rect(400, 620, 200, 26),
+    pygame.Rect(1200, 620, 200, 26),
+    pygame.Rect(3200, 620, 200, 26),
+    pygame.Rect(4000, 620, 200, 26),
+    pygame.Rect(4800, 620, 200, 26),
+    pygame.Rect(6200, 620, 200, 26),
+    # climbable towers (optional height advantage)
+    pygame.Rect(2050, 620, 160, 26),  # tower 1
+    pygame.Rect(2280, 560, 160, 26),
+    pygame.Rect(2510, 500, 160, 26),
+    pygame.Rect(5550, 620, 160, 26),  # tower 2
+    pygame.Rect(5780, 560, 160, 26),
+    pygame.Rect(6010, 500, 160, 26),
+    # ceiling beams (decorative, above jump reach)
+    pygame.Rect(300, 280, 400, 16),
+    pygame.Rect(3000, 280, 400, 16),
+    pygame.Rect(5200, 280, 400, 16),
 ]
 
 LEVEL_2_5 = {

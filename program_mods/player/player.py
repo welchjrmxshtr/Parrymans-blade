@@ -39,9 +39,10 @@ class Player:
     def draw(self, screen, pos):
         screen.blit(self._shadow, (pos[0] - 4, pos[1] + self.HEIGHT - 5))
         surf = self.frames[self.frame]
+        body_top = getattr(surf, "body_top", 0)
         if self.facing < 0:
             surf = pygame.transform.flip(surf, True, False)
-        screen.blit(surf, (pos[0], pos[1] - self.HOVER))
+        screen.blit(surf, (pos[0], pos[1] - self.HOVER - body_top))
 
     def move(self, left, right):
         self.vx = 0.0

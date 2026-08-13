@@ -13,10 +13,11 @@ CHECKPOINT_POS = LEVEL["checkpoint"]
 PLATFORMS = LEVEL["platforms"]
 ENEMIES = LEVEL["enemies"]
 ITEMS = LEVEL["items"]
+DECOR = LEVEL.get("decor", None)
 
 
 def set_level(world_index, level_index):
-    global WORLD_INDEX, LEVEL_INDEX, WORLD, LEVEL, LEVEL_NAME, LEVEL_WIDTH, LEVEL_HEIGHT, PLAYER_SPAWN, CHECKPOINT_POS, PLATFORMS, ENEMIES, ITEMS
+    global WORLD_INDEX, LEVEL_INDEX, WORLD, LEVEL, LEVEL_NAME, LEVEL_WIDTH, LEVEL_HEIGHT, PLAYER_SPAWN, CHECKPOINT_POS, PLATFORMS, ENEMIES, ITEMS, DECOR
     WORLD_INDEX = world_index
     LEVEL_INDEX = level_index
     WORLD = WORLDS[WORLD_INDEX]
@@ -29,3 +30,4 @@ def set_level(world_index, level_index):
     PLATFORMS = LEVEL["platforms"]
     ENEMIES = LEVEL["enemies"]
     ITEMS = LEVEL["items"]
+    DECOR = LEVEL.get("decor", None)
