@@ -44,20 +44,28 @@ live in individual `.py` files; each game element owns its own package under
 main.py                      # launcher only
 program_mods/
 ├── game/                    # orchestration
-│   ├── backbone.py          #   outer loop (title→game→title); _run_game() game loop
+│   ├── backbone.py          #   outer loop (title→game→title); _run_game() multi-world loop + transitions
 │   ├── input.py             #   handle_events(), get_movement(keys)
-│   ├── settings.py          #   window, FPS, colors, message text/timing
-│   └── font.py              #   make_font(): pygame.font with _freetype fallback
+│   ├── settings.py          #   window, FPS, colors, message text/timing, FADE_TIME
+│   ├── font.py              #   make_font(): pygame.font with _freetype fallback
+│   └── fade.py              #   fade_to_black() / fade_from_black() over FADE_TIME
 ├── player/
 │   ├── player.py            #   Player: physics, collisions, float cycle, hover/shadow
 │   └── sprite.py            #   reaper pixel frames (hood+skull, robe, swaying tail)
 ├── camera/
 │   └── camera.py            #   follow + clamp to world, apply() for rendering
 ├── level/
-│   └── level.py             #   loads the ACTIVE world from worlds/ and re-exports it
+│   ├── __init__.py          #   re-exports level.py constants + set_world() (re-syncs)
+│   └── level.py             #   loads the ACTIVE world from worlds/; set_world(index)
 ├── worlds/
-│   ├── world_1.py           #   level data dict: name, size, spawn, checkpoint, platforms
-│   └── __init__.py          #   WORLDS registry (append world_2, world_3, ...)
+│   ├── world_1/              #   ACTIVE world (WORLDS[0]); one package per world
+│   │   ├── world.py          #     metadata dict: name, size, spawn, checkpoint
+│   │   ├── platforms.py      #     PLATFORMS: list of pygame.Rect
+│   │   ├── enemies.py        #     ENEMIES (empty stub)
+│   │   ├── items.py          #     ITEMS (empty stub)
+│   │   └── __init__.py       #     re-exports WORLD_1 + data lists
+│   ├── world_2/ … world_5/   #   placeholder templates (same layout, not registered)
+│   └── __init__.py           #   WORLDS registry (activate a world here)
 ├── platform/
 │   └── deck.py              #   build_deck(w,h): cached wooden ship-deck texture
 ├── checkpoint/
@@ -67,6 +75,8 @@ program_mods/
 │   └── start_screen.py      #   run_start_screen(): title, mascot, ENTER to start
 ├── pause_menu/
 │   └── pause_menu.py        #   run_pause_menu(): Resume/Restart/Title/Quit
+├── victory/
+│   └── victory.py           #   run_victory_scene(): PLACEHOLDER (not implemented)
 ├── __init__.py
 └── bank.py                  # EMPTY stub (user scaffolding — leave alone)
 system_mods/                 # eraser.py, oopsie.py EMPTY stubs — leave alone
@@ -77,25 +87,57 @@ All packages re-export public API via `__init__.py` (e.g.
 imported lazily inside `backbone.py` to avoid a circular import
 (`start_screen → game → backbone → start_screen`).
 
+### World transitions
+
+`_run_game()` runs every world in sequence. A world completes when its checkpoint
+is activated **and** the player reaches the right edge
+(`player.rect.left >= LEVEL_WIDTH`). On completion: `fade_to_black` (2s) →
+`run_victory_scene` (placeholder, not implemented) → next world via
+`level.set_world(index)` → `fade_from_black`. After the last world, the player
+loops to the last checkpoint (respawn there) instead of advancing, since only 5
+world slots exist and more are planned. **Gotcha:** `level.set_world()` rebinds
+module globals in `level.py` and `level/__init__.py` re-syncs its re-exports;
+`backbone.py` must read world data through the `level` module object
+(`level.PLATFORMS`), not `from ..level import PLATFORMS` — a bare import would
+freeze world 1's data forever.
+
 ### Level data & "worlds" (how to add levels later)
 
-Each world is a plain data dict in `program_mods/worlds/world_<n>.py`:
+Each world is one package in `program_mods/worlds/world_<n>/` with a shared
+layout: `world.py` holds the metadata dict (name/size/spawn/checkpoint) plus
+references to the data lists; `platforms.py` / `enemies.py` / `items.py` hold the
+world-building data (enemies/items are empty stubs for now):
 
 ```python
+# world.py
+from .platforms import PLATFORMS
+from .enemies import ENEMIES
+from .items import ITEMS
+
 WORLD_1 = {
     "name": "The Underdeck",
     "width": 2400, "height": 800,
     "spawn": (150, 500),
     "checkpoint": (2310, 660),
-    "platforms": [pygame.Rect(0, 700, 2400, 100), ...],
+    "platforms": PLATFORMS,
+    "enemies": ENEMIES,
+    "items": ITEMS,
 }
 ```
 
-Register new worlds by importing them in `worlds/__init__.py` and adding to the
-`WORLDS` tuple. `level/level.py` picks the active one (`WORLDS[0]`) and exposes
-`LEVEL_WIDTH`, `LEVEL_HEIGHT`, `PLAYER_SPAWN`, `CHECKPOINT_POS`, `PLATFORMS` —
-the rest of the game only talks to `program_mods.level`. To switch worlds, add
-an active-world selector in `level.py`.
+```python
+# platforms.py
+import pygame
+PLATFORMS = [pygame.Rect(0, 700, 2400, 100), ...]
+```
+
+Activate a world by importing its package in `worlds/__init__.py` and appending
+its `WORLD_<n>` to the `WORLDS` tuple (`world_2`…`world_5` are placeholder
+templates, not yet registered). `level/level.py` picks the active one
+(`WORLDS[0]`) and exposes `LEVEL_WIDTH`, `LEVEL_HEIGHT`, `PLAYER_SPAWN`,
+`CHECKPOINT_POS`, `PLATFORMS`, `ENEMIES`, `ITEMS` — the rest of the game only
+talks to `program_mods.level`. `level.set_world(index)` rebinds those globals at
+runtime (used by world transitions).
 
 ### Key mechanics
 
@@ -126,7 +168,7 @@ an active-world selector in `level.py`.
   keyboard-selectable items. Returns "resume" | "restart" | "title" | "quit".
   `backbone.py` outer loop sends "title" back to the start screen. `dt` is
   clamped to 1/20s so a long pause doesn't teleport the player on resume.
-- **Level 1** (`worlds/world_1.py`): ground spans 0–2400 @ y=700; 8 floating
+- **Level 1** (`worlds/world_1/`): ground spans 0–2400 @ y=700; 8 floating
   platforms (steps ascending to the right). Checkpoint on the final platform at
   (2310, 660). Max jump ≈108 px; platform steps are 60 px.
 
@@ -162,10 +204,12 @@ an active-world selector in `level.py`.
 
 ## Suggested next steps (not yet implemented)
 
-- **Win state / goal** — the checkpoint is mid-world; the map ends with no goal
-  or map-end wall (you can walk off the edge and respawn). Add a finish flag or
-  a world-end gate.
-- **More worlds** — the `worlds/` registry is ready; design `world_2.py`.
+- **Victory scene** — `program_mods/victory/run_victory_scene()` is a placeholder
+  no-op; world transitions now call it after the fade-to-black, between the two
+  fades. Implement the banner + short scene there.
+- **More worlds** — the `worlds/` registry is ready; design `world_2/` (fill in
+  its `world.py`/`platforms.py` and register it in `worlds/__init__.py`). Each
+  new world automatically becomes reachable via the transition loop.
 - **Enemies / hazards, coins/collectibles**, sound, tilemap loading.
 - **Direction-aware tail** — the robe tail sways horizontally in-place; it
   could stream behind the reaper based on `facing`.
